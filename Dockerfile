@@ -1,0 +1,105 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        7zip \
+        automake \
+        bc \
+        btop \
+        build-essential \
+        ca-certificates \
+        clang \
+        cmake \
+        curl \
+        elfutils \
+        fzf \
+        gdb \
+        git \
+        gnupg \
+        gzip \
+        jq \
+        kitty-terminfo \
+        less \
+        nano \
+        openssh-client \
+        patch \
+        pipx \
+        pkgconf \
+        python3 \
+        python3-pip \
+        python3-venv \
+        ripgrep \
+        rustup \
+        software-properties-common \
+        sudo \
+        unzip \
+        vim \
+        wget \
+        zip
+
+# install docker
+# https://docs.docker.com/engine/install/ubuntu/
+RUN install -m 0755 -d /etc/apt/keyrings && \
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && \
+    chmod a+r /etc/apt/keyrings/docker.asc && \
+    tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+
+RUN apt-get update && \
+    apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y --no-install-recommends
+
+# install helix
+RUN add-apt-repository ppa:maveonair/helix-editor && \
+    apt-get update && \
+    apt-get install helix -y --no-install-recommends
+
+# install yazi
+RUN curl -sS https://debian.griffo.io/EA0F721D231FDD3A0A17B9AC7808B4DD62C41256.asc | gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/debian.griffo.io.gpg && \
+    echo "deb https://debian.griffo.io/apt $(lsb_release -sc 2>/dev/null) main" | sudo tee /etc/apt/sources.list.d/debian.griffo.io.list && \
+    apt-get update && \
+    apt-get install yazi -y --no-install-recommends
+
+# nodejs for claude-code
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs
+
+RUN npm install -g @anthropic-ai/claude-code
+
+# install rust and uv
+# with hack around installing system-wide
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH=/usr/local/cargo/bin:$PATH
+RUN mkdir -p "$RUSTUP_HOME" "$CARGO_HOME" && \
+    rustup default stable && \
+    chmod -R a+w "$RUSTUP_HOME" "$CARGO_HOME" && \
+    curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin INSTALLER_NO_MODIFY_PATH=1 sh
+
+ARG USERNAME=dev
+ARG USER_UID=1000
+ARG USER_GID=1000
+RUN set -eux; \
+    # delete ubuntu user
+    if id ubuntu >/dev/null 2>&1 && [ "$(id -u ubuntu)" = "${USER_UID}" ]; then \
+        userdel -r ubuntu 2>/dev/null || userdel ubuntu; \
+    fi; \
+    if ! getent group "${USER_GID}" >/dev/null; then groupadd -g "${USER_GID}" "${USERNAME}"; fi; \
+    useradd -m -u "${USER_UID}" -g "${USER_GID}" -s /bin/bash "${USERNAME}"; \
+    echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/"${USERNAME}"; \
+    chmod 0440 /etc/sudoers.d/"${USERNAME}"; \
+    printf 'export PS1="\\[\\e[1;33m\\](sandbox)\\[\\e[0m\\] \\w \\$ "\n' >> /home/"${USERNAME}"/.bashrc; \
+    chown "${USER_UID}:${USER_GID}" /home/"${USERNAME}"/.bashrc
+
+USER ${USERNAME}
+
+# will mount host folder here
+WORKDIR /workspace
+
+CMD ["bash"]
