@@ -94,7 +94,7 @@ RUN set -eux; \
     useradd -m -u "${USER_UID}" -g "${USER_GID}" -s /bin/bash "${USERNAME}"; \
     echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/"${USERNAME}"; \
     chmod 0440 /etc/sudoers.d/"${USERNAME}"; \
-    printf 'export PS1="\\[\\e[1;33m\\](sandbox)\\[\\e[0m\\] \\w \\$ "\n' >> /home/"${USERNAME}"/.bashrc; \
+    printf 'export PS1="\\[\\e[1;33m\\](aisolation)\\[\\e[0m\\] \\w \\$ "\n' >> /home/"${USERNAME}"/.bashrc; \
     chown "${USER_UID}:${USER_GID}" /home/"${USERNAME}"/.bashrc
 
 USER ${USERNAME}

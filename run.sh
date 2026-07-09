@@ -27,6 +27,7 @@ done
 FORCE_BUILD=0
 if [[ "${1:-}" == "--build" ]]; then
     FORCE_BUILD=1
+    shift
 fi
 
 # build image if `--build` or doesn't already exist
@@ -43,7 +44,7 @@ echo "[aisolation] have 'fun'."
 
 # enter docker
 exec docker run --rm -it \
-    --hostname sandbox \
+    --hostname aisolation \
     -v "$MOUNT_DIR:/workspace" \
     -w /workspace \
     ${ANTHROPIC_API_KEY:+-e ANTHROPIC_API_KEY} \
