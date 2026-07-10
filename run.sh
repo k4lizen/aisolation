@@ -10,25 +10,61 @@ MOUNT_DIR="$(pwd)"
 
 # show help page if needed
 usage() {
-    echo "Usage: $0"
+    echo "Usage: aihere [options] [command]"
+    echo ""
     echo "Spawn docker container with CTF + AI setup with the current folder mounted."
-    echo "-b, --build  rebuild before spawning"
-    echo "-h, --help   show this page"
+    echo ""
+    echo "-b, --build                  rebuild before spawning"
+    echo "-m, --mount SRC[:DST[:ro]]   mount an extra folder (repeatable)."
+    echo "                             DST defaults to /ws/<basename of SRC>."
+    echo "                             append :ro for a read-only mount (DST required)."
+    echo "-h, --help                   show this page"
 }
 
-for arg in "$@"; do
-    if [[ $arg == "-h" || $arg == "--help" ]]; then
-        set +x
-        usage
-        exit 0
-    fi
-done
-
 FORCE_BUILD=0
-if [[ "${1:-}" == "-b" || "${1:-}" == "--build" ]]; then
-    FORCE_BUILD=1
-    shift
-fi
+EXTRA_MOUNTS=()
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        -b|--build)
+            FORCE_BUILD=1
+            shift
+            ;;
+        -m|--mount)
+            if [[ $# -lt 2 ]]; then
+                echo "[aisolation] $1 requires an argument: SRC[:DST[:ro]]" >&2
+                exit 1
+            fi
+            spec="$2"
+            shift 2
+            src="${spec%%:*}"      # everything before the first ':'
+            rest="${spec#"$src"}"  # ":DST", ":DST:ro" or empty
+            rest="${rest#:}"       # "DST", "DST:ro" or empty
+            if [[ ! -e "$src" ]]; then
+                echo "[aisolation] mount source does not exist: $src" >&2
+                exit 1
+            fi
+            src="$(realpath "$src")"
+            if [[ -z "$rest" ]]; then
+                rest="/ws/$(basename "$src")"
+            fi
+            EXTRA_MOUNTS+=( -v "$src:$rest" )
+            echo "[aisolation] Mounting $src to ${rest} ."
+            ;;
+        -*)
+            echo "[aisolation] unknown option: $1" >&2
+            usage
+            exit 1
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
 
 # build image if `--build` or doesn't already exist
 if [[ "$FORCE_BUILD" == "1" ]] || ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
@@ -54,6 +90,7 @@ exec docker run --rm -it \
     --hostname aisolation \
     -v "$MOUNT_DIR:/workspace" \
     -v /var/run/docker.sock:/var/run/docker.sock \
+    "${EXTRA_MOUNTS[@]}" \
     -w /workspace \
     --env-file $ENV_FILE \
     "$IMAGE" \
