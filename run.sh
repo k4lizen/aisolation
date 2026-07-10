@@ -49,9 +49,11 @@ if [[ ! -f "$ENV_FILE" ]]; then
 fi
 
 # enter docker
+# mounting docker.sock for docker-in-docker (https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/)
 exec docker run --rm -it \
     --hostname aisolation \
     -v "$MOUNT_DIR:/workspace" \
+    -v /var/run/docker.sock:/var/run/docker.sock \
     -w /workspace \
     --env-file $ENV_FILE \
     "$IMAGE" \
