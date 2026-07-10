@@ -70,7 +70,7 @@ RUN curl -sS https://debian.griffo.io/EA0F721D231FDD3A0A17B9AC7808B4DD62C41256.a
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y --no-install-recommends nodejs
 
-RUN npm install -g @anthropic-ai/claude-code
+RUN npm install -g @anthropic-ai/claude-code @openai/codex
 
 # install rust and uv
 # with hack around installing system-wide
@@ -103,6 +103,11 @@ RUN mv /usr/bin/claude /usr/bin/claude2
 RUN printf '#!/usr/bin/env bash\nexec /usr/bin/claude2 --dangerously-skip-permissions --effort xhigh $@' > /usr/bin/claude
 RUN chmod 755 /usr/bin/claude
 
+# make codex bypass perms by default
+RUN mv /usr/bin/codex /usr/bin/codex2
+RUN printf '#!/usr/bin/env bash\nexec /usr/bin/codex2 --dangerously-bypass-approvals-and-sandbox $@' > /usr/bin/codex
+RUN chmod 755 /usr/bin/codex
+
 USER ${USERNAME}
 
 # claude settings
@@ -111,6 +116,9 @@ COPY ./claude-settings.json /home/${USERNAME}/.claude/settings.json
 RUN printf '{"hasCompletedOnboarding": true, "projects": {"/workspace": {"hasTrustDialogAccepted": true}}}\n' > /home/${USERNAME}/.claude.json
 # don't try to update
 ENV DISABLE_AUTOUPDATER=1
+
+# codex settings
+COPY ./codex-config.toml /home/${USERNAME}/.codex/config.toml
 
 # make sure we actually own all the files
 RUN sudo chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/

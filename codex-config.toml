@@ -1,0 +1,12 @@
+model_reasoning_effort = "xhigh"
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+web_search = "live"
+check_for_update_on_startup = false
+
+[projects."/workspace"]
+trust_level = "trusted"
+
+[tui]
+show_tooltips = false
+animations = false
