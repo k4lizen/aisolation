@@ -42,11 +42,17 @@ fi
 echo "[aisolation] Mounted $MOUNT_DIR to /workspace ."
 echo "[aisolation] have 'fun'."
 
+ENV_FILE="$SCRIPT_DIR/env"
+if [[ ! -f "$ENV_FILE" ]]; then
+    echo "[aisolation] File $ENV_FILE missing, you need to auth!"
+    exit 1
+fi
+
 # enter docker
 exec docker run --rm -it \
     --hostname aisolation \
     -v "$MOUNT_DIR:/workspace" \
     -w /workspace \
-    ${ANTHROPIC_API_KEY:+-e ANTHROPIC_API_KEY} \
+    --env-file $ENV_FILE \
     "$IMAGE" \
     "${@:-bash}"
