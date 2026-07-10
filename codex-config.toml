@@ -3,6 +3,16 @@ approval_policy = "never"
 sandbox_mode = "danger-full-access"
 web_search = "live"
 check_for_update_on_startup = false
+network_access = "enabled"
+disable_response_storage = true
+model_provider = "rightcode"
+
+# if you're not using a proxy delete this and the line above
+[model_providers.rightcode]
+name = "rightcode"
+base_url = "https://right.codes/codex/v1"
+wire_api = "responses"
+requires_openai_auth = true
 
 [projects."/workspace"]
 trust_level = "trusted"
