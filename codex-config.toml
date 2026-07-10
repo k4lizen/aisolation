@@ -8,11 +8,13 @@ disable_response_storage = true
 model_provider = "rightcode"
 
 # if you're not using a proxy delete this and the line above
+# https://docs.right.codes/docs/rc_cli_config/codex.html
 [model_providers.rightcode]
 name = "rightcode"
 base_url = "https://right.codes/codex/v1"
 wire_api = "responses"
-requires_openai_auth = true
+# Need to set this instead of `requires_openai_auth` so we don't get prompted on first open.
+env_key = "OPENAI_API_KEY"
 
 [projects."/workspace"]
 trust_level = "trusted"
