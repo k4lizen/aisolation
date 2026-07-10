@@ -12,7 +12,7 @@ MOUNT_DIR="$(pwd)"
 usage() {
     echo "Usage: $0"
     echo "Spawn docker container with CTF + AI setup with the current folder mounted."
-    echo "--build      rebuild before spawning"
+    echo "-b, --build  rebuild before spawning"
     echo "-h, --help   show this page"
 }
 
@@ -25,7 +25,7 @@ for arg in "$@"; do
 done
 
 FORCE_BUILD=0
-if [[ "${1:-}" == "--build" ]]; then
+if [[ "${1:-}" == "-b" || "${1:-}" == "--build" ]]; then
     FORCE_BUILD=1
     shift
 fi

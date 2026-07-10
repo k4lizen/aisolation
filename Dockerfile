@@ -97,7 +97,24 @@ RUN set -eux; \
     printf 'export PS1="\\[\\e[1;33m\\](aisolation)\\[\\e[0m\\] \\w \\$ "\n' >> /home/"${USERNAME}"/.bashrc; \
     chown "${USER_UID}:${USER_GID}" /home/"${USERNAME}"/.bashrc
 
+# make claude bypass perms by default
+RUN mv /usr/bin/claude /usr/bin/claude2
+# (for some reason it doesn't respect the xhigh in the config file)
+RUN printf '#!/usr/bin/env bash\nexec /usr/bin/claude2 --dangerously-skip-permissions --effort xhigh $@' > /usr/bin/claude
+RUN chmod 755 /usr/bin/claude
+
 USER ${USERNAME}
+
+# claude settings
+COPY ./claude-settings.json /home/${USERNAME}/.claude/settings.json
+# don't pester on startup
+RUN printf '{"hasCompletedOnboarding": true, "projects": {"/workspace": {"hasTrustDialogAccepted": true}}}\n' > /home/${USERNAME}/.claude.json
+# don't try to update
+ENV DISABLE_AUTOUPDATER=1
+
+# make sure we actually own all the files
+RUN sudo chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/
+
 
 # will mount host folder here
 WORKDIR /workspace
