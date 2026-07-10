@@ -1,0 +1,18 @@
+[init]
+    defaultBranch = main
+[user]
+    name = slopatron3000
+    email = slopatron3000@meow.com
+[pull]
+	rebase = true
+[push]
+    autoSetupRemote = true
+    followTags = true
+[rebase]
+    autoSquash = true
+[branch]
+    sort = -committerdate
+[diff]
+    algorithm = histogram
+    colorMoved = dimmed-zebra
+    mnemonicPrefix = true

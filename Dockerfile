@@ -120,9 +120,11 @@ ENV DISABLE_AUTOUPDATER=1
 # codex settings
 COPY ./codex-config.toml /home/${USERNAME}/.codex/config.toml
 
+# git settings
+COPY ./gitconfig /home/${USERNAME}/.gitconfig
+
 # make sure we actually own all the files
 RUN sudo chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/
-
 
 # will mount host folder here
 WORKDIR /workspace
