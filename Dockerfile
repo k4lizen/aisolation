@@ -36,7 +36,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         unzip \
         vim \
         wget \
-        zip
+        zip \
+        qemu-user \
+        qemu-user-binfmt \
+        qemu-system
 
 # install docker
 # https://docs.docker.com/engine/install/ubuntu/
