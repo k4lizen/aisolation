@@ -122,6 +122,11 @@ RUN mv /usr/bin/codex /usr/bin/codex2
 RUN printf '#!/usr/bin/env bash\nexec /usr/bin/codex2 --dangerously-bypass-approvals-and-sandbox $@' > /usr/bin/codex
 RUN chmod 755 /usr/bin/codex
 
+# yazi helper
+COPY ./yazi-bash-helper.sh .
+RUN cat yazi-bash-helper.sh >> /home/${USERNAME}/.bashrc
+RUN rm yazi-bash-helper.sh
+
 USER ${USERNAME}
 
 # claude settings
@@ -139,11 +144,6 @@ COPY ./gitconfig /home/${USERNAME}/.gitconfig
 
 # bash prompt pretty
 RUN printf 'export PS1="\\[\\e[1;33m\\](aisolation)\\[\\e[0m\\] \\w \\$ "\n' >> /home/"${USERNAME}"/.bashrc;
-
-# yazi helper
-COPY ./yazi-bash-helper.sh .
-RUN cat yazi-bash-helper.sh >> /home/${USERNAME}/.bashrc
-RUN rm yazi-bash-helper.sh
 
 # make sure we actually own all the files
 # and the /nix folder too
