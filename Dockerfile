@@ -33,7 +33,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         patchelf \
         bear \
         nix \
-        codeql \
+        cpio \
+        gcc-14 \
         ripgrep \
         rustup \
         software-properties-common \
@@ -73,6 +74,9 @@ RUN curl -sS https://debian.griffo.io/EA0F721D231FDD3A0A17B9AC7808B4DD62C41256.a
     echo "deb https://debian.griffo.io/apt $(lsb_release -sc 2>/dev/null) main" | sudo tee /etc/apt/sources.list.d/debian.griffo.io.list && \
     apt-get update && \
     apt-get install yazi -y --no-install-recommends
+
+# debian.griffo.io also allows us to install zig (which isn't in the main repos)
+RUN apt-get install zig -y --no-install-recommends
 
 # nodejs for claude-code
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
