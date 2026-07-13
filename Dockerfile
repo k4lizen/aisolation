@@ -93,10 +93,11 @@ RUN wget https://dl.google.com/android/repository/android-ndk-r27d-linux.zip -O 
 ENV ANDROID_NDK_HOME=/opt/android-ndk-r27d
 ENV PATH="${ANDROID_NDK_HOME}:${PATH}"
 
-# nodejs for claude-code
+# nodejs for the clankers
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y --no-install-recommends nodejs
 
+# claude code and codex
 RUN npm install -g @anthropic-ai/claude-code @openai/codex
 
 # install rust and uv
