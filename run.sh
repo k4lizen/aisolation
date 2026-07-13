@@ -86,6 +86,7 @@ fi
 
 # enter docker
 # mounting docker.sock for docker-in-docker (https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/)
+# --device=/dev/kvm  to allow running qemu-system setups inside
 exec docker run --rm -it \
     --hostname aisolation \
     -v "$MOUNT_DIR:/workspace" \
@@ -93,5 +94,6 @@ exec docker run --rm -it \
     "${EXTRA_MOUNTS[@]}" \
     -w /workspace \
     --env-file $ENV_FILE \
+    --device=/dev/kvm \
     "$IMAGE" \
     "${@:-bash}"
