@@ -45,7 +45,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         zip \
         qemu-user \
         qemu-user-binfmt \
-        qemu-system
+        qemu-system \
+        adb \
+        llvm-20
 
 # add extra apt sources
 # docker
@@ -62,8 +64,9 @@ Architectures: $(dpkg --print-architecture)
 Signed-By: /etc/apt/keyrings/docker.asc
 EOF
 # yazi & zig
-RUN curl -sS https://debian.griffo.io/EA0F721D231FDD3A0A17B9AC7808B4DD62C41256.asc | gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/debian.griffo.io.gpg && \
-    echo "deb https://debian.griffo.io/apt $(lsb_release -sc 2>/dev/null) main" | sudo tee /etc/apt/sources.list.d/debian.griffo.io.list
+# FIXME: this mirror will be paid in a couple of months
+RUN curl -sS https://deb.griffo.io/EA0F721D231FDD3A0A17B9AC7808B4DD62C41256.asc | gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/deb.griffo.io.gpg && \
+    echo "deb https://deb.griffo.io/apt $(lsb_release -sc 2>/dev/null) main" | sudo tee /etc/apt/sources.list.d/deb.griffo.io.list
 # helix
 RUN add-apt-repository -y ppa:maveonair/helix-editor
 # latest gcc
@@ -81,6 +84,14 @@ RUN apt-get install -y --no-install-recommends \
     zig \
     gcc-15 \
     gcc-16
+
+# install the android ndk
+# see latest LTS on https://developer.android.com/ndk/downloads
+# (if we end up missing stuff, we can go the cmdline tools + sdkmanager route)
+RUN wget https://dl.google.com/android/repository/android-ndk-r27d-linux.zip -O /opt/android-ndk.zip && \
+    cd /opt && unzip android-ndk.zip && rm android-ndk.zip
+ENV ANDROID_NDK_HOME=/opt/android-ndk-r27d
+ENV PATH="${ANDROID_NDK_HOME}:${PATH}"
 
 # nodejs for claude-code
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \

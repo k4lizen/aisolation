@@ -90,13 +90,19 @@ fi
 # We mount a named docker-managed volume (aisolation-nix) that will be shared between all dockers, so they
 #   don't have to rebuild nix stuff all the time. Since nix is content-addressed, they won't destructively
 #   interfere with eachother.
+# These two:
+#    --add-host=host.docker.internal:host-gateway \
+#    --env ADB_SERVER_SOCKET=tcp:host.docker.internal:5037 \
+# Make it so that the docker can reach an adb server started on the host with `adb -a start-server`.
 exec docker run --rm -it \
     --hostname aisolation \
-    -v "$MOUNT_DIR:/workspace" \
-    -v /var/run/docker.sock:/var/run/docker.sock \
+    --add-host=host.docker.internal:host-gateway \
+    --env ADB_SERVER_SOCKET=tcp:host.docker.internal:5037 \
+    --volume "$MOUNT_DIR:/workspace" \
+    --volume /var/run/docker.sock:/var/run/docker.sock \
     --mount type=volume,src=aisolation-nix,dst=/nix \
     "${EXTRA_MOUNTS[@]}" \
-    -w /workspace \
+    --workdir /workspace \
     --env-file $ENV_FILE \
     --device=/dev/kvm \
     "$IMAGE" \
