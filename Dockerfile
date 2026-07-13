@@ -47,7 +47,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         qemu-user-binfmt \
         qemu-system
 
-# install docker
+# add extra apt sources
+# docker
 # https://docs.docker.com/engine/install/ubuntu/
 RUN install -m 0755 -d /etc/apt/keyrings && \
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && \
@@ -60,23 +61,26 @@ Components: stable
 Architectures: $(dpkg --print-architecture)
 Signed-By: /etc/apt/keyrings/docker.asc
 EOF
-
-RUN apt-get update && \
-    apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y --no-install-recommends
-
-# install helix
-RUN add-apt-repository ppa:maveonair/helix-editor && \
-    apt-get update && \
-    apt-get install helix -y --no-install-recommends
-
-# install yazi
+# yazi & zig
 RUN curl -sS https://debian.griffo.io/EA0F721D231FDD3A0A17B9AC7808B4DD62C41256.asc | gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/debian.griffo.io.gpg && \
-    echo "deb https://debian.griffo.io/apt $(lsb_release -sc 2>/dev/null) main" | sudo tee /etc/apt/sources.list.d/debian.griffo.io.list && \
-    apt-get update && \
-    apt-get install yazi -y --no-install-recommends
+    echo "deb https://debian.griffo.io/apt $(lsb_release -sc 2>/dev/null) main" | sudo tee /etc/apt/sources.list.d/debian.griffo.io.list
+# helix
+RUN add-apt-repository -y ppa:maveonair/helix-editor
+# latest gcc
+RUN add-apt-repository -y ppa:ubuntu-toolchain-r/test
 
-# debian.griffo.io also allows us to install zig (which isn't in the main repos)
-RUN apt-get install zig -y --no-install-recommends
+# fetch from the new apt sources
+RUN apt-get update
+
+# install the newly available programs 
+RUN apt-get install -y --no-install-recommends \
+    docker-ce docker-ce-cli containerd.io \
+    docker-buildx-plugin docker-compose-plugin \
+    helix \
+    yazi \
+    zig \
+    gcc-15 \
+    gcc-16
 
 # nodejs for claude-code
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
