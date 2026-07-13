@@ -87,10 +87,14 @@ fi
 # enter docker
 # mounting docker.sock for docker-in-docker (https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/)
 # --device=/dev/kvm  to allow running qemu-system setups inside
+# We mount a named docker-managed volume (aisolation-nix) that will be shared between all dockers, so they
+#   don't have to rebuild nix stuff all the time. Since nix is content-addressed, they won't destructively
+#   interfere with eachother.
 exec docker run --rm -it \
     --hostname aisolation \
     -v "$MOUNT_DIR:/workspace" \
     -v /var/run/docker.sock:/var/run/docker.sock \
+    --mount type=volume,src=aisolation-nix,dst=/nix \
     "${EXTRA_MOUNTS[@]}" \
     -w /workspace \
     --env-file $ENV_FILE \
