@@ -98,20 +98,18 @@ RUN mkdir -p "$RUSTUP_HOME" "$CARGO_HOME" && \
     chmod -R a+w "$RUSTUP_HOME" "$CARGO_HOME" && \
     curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin INSTALLER_NO_MODIFY_PATH=1 sh
 
+# delete ubuntu user, and make new user matching the hosts uid and gid
 ARG USERNAME=dev
 ARG USER_UID=1000
 ARG USER_GID=1000
 RUN set -eux; \
-    # delete ubuntu user
     if id ubuntu >/dev/null 2>&1 && [ "$(id -u ubuntu)" = "${USER_UID}" ]; then \
         userdel -r ubuntu 2>/dev/null || userdel ubuntu; \
     fi; \
     if ! getent group "${USER_GID}" >/dev/null; then groupadd -g "${USER_GID}" "${USERNAME}"; fi; \
     useradd -m -u "${USER_UID}" -g "${USER_GID}" -s /bin/bash "${USERNAME}"; \
     echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/"${USERNAME}"; \
-    chmod 0440 /etc/sudoers.d/"${USERNAME}"; \
-    printf 'export PS1="\\[\\e[1;33m\\](aisolation)\\[\\e[0m\\] \\w \\$ "\n' >> /home/"${USERNAME}"/.bashrc; \
-    chown "${USER_UID}:${USER_GID}" /home/"${USERNAME}"/.bashrc
+    chmod 0440 /etc/sudoers.d/"${USERNAME}";
 
 # make claude bypass perms by default
 RUN mv /usr/bin/claude /usr/bin/claude2
@@ -139,8 +137,18 @@ COPY ./codex-config.toml /home/${USERNAME}/.codex/config.toml
 # git settings
 COPY ./gitconfig /home/${USERNAME}/.gitconfig
 
+# bash prompt pretty
+RUN printf 'export PS1="\\[\\e[1;33m\\](aisolation)\\[\\e[0m\\] \\w \\$ "\n' >> /home/"${USERNAME}"/.bashrc;
+
+# yazi helper
+COPY ./yazi-bash-helper.sh .
+RUN cat yazi-bash-helper.sh >> /home/${USERNAME}/.bashrc
+RUN rm yazi-bash-helper.sh
+
 # make sure we actually own all the files
-RUN sudo chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/
+# and the /nix folder too
+RUN sudo chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/ && \
+    sudo chown -R ${USERNAME}:${USERNAME} /nix
 
 # will mount host folder here
 WORKDIR /workspace
