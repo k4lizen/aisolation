@@ -47,7 +47,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         qemu-user-binfmt \
         qemu-system \
         adb \
-        llvm-20
+        llvm-20 \
+        libssl-dev
 
 # add extra apt sources
 # docker
@@ -161,6 +162,11 @@ RUN printf 'export PS1="\\[\\e[1;33m\\](aisolation)\\[\\e[0m\\] \\w \\$ "\n' >> 
 # and the /nix folder too
 RUN sudo chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/ && \
     sudo chown -R ${USERNAME}:${USERNAME} /nix
+
+# FIXME: move these installs up later
+# for now we do them here because i cba to wait for the whole dockerfile rebuild
+RUN sudo apt-get update && sudo apt-get install -y --no-install-recommends xxd libkeyutils-dev libnl-cli-3-dev libnl-route-3-dev libip4tc-dev
+# libkeyutils-dev libnl-cli-3-dev libnl-route-3-dev libip4tc-dev - common kernel exp deps
 
 # will mount host folder here
 WORKDIR /workspace
