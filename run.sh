@@ -23,6 +23,13 @@ usage() {
 
 FORCE_BUILD=0
 EXTRA_MOUNTS=()
+STATE_MOUNTS=(
+    --mount "type=volume,src=aisolation-nix,dst=/nix"
+    --mount "type=volume,src=aisolation-codex,dst=/home/dev/.codex"
+    --mount "type=volume,src=aisolation-claude,dst=/home/dev/.claude"
+    --mount "type=bind,src=$SCRIPT_DIR/codex-config.toml,dst=/home/dev/.codex/config.toml,readonly"
+    --mount "type=bind,src=$SCRIPT_DIR/claude-settings.json,dst=/home/dev/.claude/settings.json,readonly"
+)
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -87,9 +94,13 @@ fi
 # enter docker
 # mounting docker.sock for docker-in-docker (https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/)
 # --device=/dev/kvm  to allow running qemu-system setups inside
-# We mount a named docker-managed volume (aisolation-nix) that will be shared between all dockers, so they
-#   don't have to rebuild nix stuff all the time. Since nix is content-addressed, they won't destructively
-#   interfere with eachother.
+# We mount named docker-managed volumes that will be shared between all docker runs:
+#   + /nix - so the runs don't have to rebuild nix stuff all the time.
+#     Since nix is content-addressed, they won't destructively interfere with eachother.
+#   + ~/.claude and ~/.codex - so sessions are persisted 
+# We then bind-mount ~/.codex/config.toml ~/.claude/settings.json on top, so they are always
+#   taken from this repo (and do not grow stale).
+# See $STATE_MOUNTS.
 # These two:
 #    --add-host=host.docker.internal:host-gateway \
 #    --env ADB_SERVER_SOCKET=tcp:host.docker.internal:5037 \
@@ -100,10 +111,10 @@ exec docker run --rm -it \
     --env ADB_SERVER_SOCKET=tcp:host.docker.internal:5037 \
     --volume "$MOUNT_DIR:/workspace" \
     --volume /var/run/docker.sock:/var/run/docker.sock \
-    --mount type=volume,src=aisolation-nix,dst=/nix \
+    "${STATE_MOUNTS[@]}" \
     "${EXTRA_MOUNTS[@]}" \
     --workdir /workspace \
-    --env-file $ENV_FILE \
+    --env-file "$ENV_FILE" \
     --device=/dev/kvm \
     "$IMAGE" \
     "${@:-bash}"
