@@ -107,6 +107,8 @@ fi
 # Make it so that the docker can reach an adb server started on the host with `adb -a start-server`.
 exec docker run --rm -it \
     --hostname aisolation \
+    --cap-add=SYS_PTRACE \
+    --security-opt seccomp=unconfined \
     --add-host=host.docker.internal:host-gateway \
     --env ADB_SERVER_SOCKET=tcp:host.docker.internal:5037 \
     --volume "$MOUNT_DIR:/workspace" \
