@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -15,7 +15,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         elfutils \
         fzf \
         gdb \
+        gdb-multiarch \
         git \
+        git-lfs \
         gnupg \
         gzip \
         jq \
@@ -27,6 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         pipx \
         pkgconf \
         python3 \
+        python3-dev \
         python3-pip \
         python3-venv \
         python-is-python3 \
@@ -48,7 +51,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         qemu-system \
         adb \
         llvm-20 \
-        libssl-dev
+        libssl-dev \
+        openjdk-17-jdk-headless \
+        busybox-static \
+        flex \
+        bison \
+        libelf-dev \
+        kmod \
+        xxd \
+        zig \
+# Common kernel exploit deps
+        libkeyutils-dev \
+        libnl-cli-3-dev \
+        libnl-route-3-dev \
+        libip4tc-dev
 
 # add extra apt sources
 # docker
@@ -64,12 +80,11 @@ Components: stable
 Architectures: $(dpkg --print-architecture)
 Signed-By: /etc/apt/keyrings/docker.asc
 EOF
-# yazi & zig
-# FIXME: this mirror will be paid in a couple of months
-RUN curl -sS https://deb.griffo.io/EA0F721D231FDD3A0A17B9AC7808B4DD62C41256.asc | gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/deb.griffo.io.gpg && \
-    echo "deb https://deb.griffo.io/apt $(lsb_release -sc 2>/dev/null) main" | sudo tee /etc/apt/sources.list.d/deb.griffo.io.list
-# helix
-RUN add-apt-repository -y ppa:maveonair/helix-editor
+# yazi
+RUN curl -fsSL https://yazi-rs.github.io/builds/yazi-keyring.gpg \
+        | sudo tee /usr/share/keyrings/yazi-keyring.gpg >/dev/null && \
+    echo 'deb [signed-by=/usr/share/keyrings/yazi-keyring.gpg] https://yazi-rs.github.io/builds/ stable main' \
+        | sudo tee /etc/apt/sources.list.d/yazi.list >/dev/null
 # latest gcc
 RUN add-apt-repository -y ppa:ubuntu-toolchain-r/test
 
@@ -80,19 +95,21 @@ RUN apt-get update
 RUN apt-get install -y --no-install-recommends \
     docker-ce docker-ce-cli containerd.io \
     docker-buildx-plugin docker-compose-plugin \
-    helix \
     yazi \
-    zig \
     gcc-15 \
     gcc-16
 
-# install the android ndk
-# see latest LTS on https://developer.android.com/ndk/downloads
-# (if we end up missing stuff, we can go the cmdline tools + sdkmanager route)
-RUN wget https://dl.google.com/android/repository/android-ndk-r27d-linux.zip -O /opt/android-ndk.zip && \
-    cd /opt && unzip android-ndk.zip && rm android-ndk.zip
-ENV ANDROID_NDK_HOME=/opt/android-ndk-r27d
-ENV PATH="${ANDROID_NDK_HOME}:${PATH}"
+# helix from github latest
+RUN set -eux; \
+    helix_deb_url="$(curl -fsSL \
+        https://api.github.com/repos/helix-editor/helix/releases/latest \
+        | jq -er '[.assets[] | select(.name | endswith("_amd64.deb")) | .browser_download_url] \
+        | if length == 1 then .[0] else error("expected exactly one amd64 Debian asset") end')"; \
+    curl -fsSL \
+        "${helix_deb_url}" \
+        -o /tmp/helix.deb && \
+    apt-get install -y --no-install-recommends /tmp/helix.deb && \
+    rm /tmp/helix.deb
 
 # nodejs for the clankers
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
@@ -156,17 +173,47 @@ COPY ./codex-config.toml /home/${USERNAME}/.codex/config.toml
 COPY ./gitconfig /home/${USERNAME}/.gitconfig
 
 # bash prompt pretty
-RUN printf 'export PS1="\\[\\e[1;33m\\](aisolation)\\[\\e[0m\\] \\w \\$ "\n' >> /home/"${USERNAME}"/.bashrc;
+RUN printf 'export PS1="\\[\\e[1;33m\\](solation)\\[\\e[0m\\] \\w \\$ "\n' >> /home/"${USERNAME}"/.bashrc;
 
 # make sure we actually own all the files
 # and the /nix folder too
 RUN sudo chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/ && \
     sudo chown -R ${USERNAME}:${USERNAME} /nix
 
-# FIXME: move these installs up later
+# install android toolchain
+ENV ANDROID_SDK_ROOT=/opt/android-sdk
+ENV ANDROID_HOME=/opt/android-sdk
+ENV ANDROID_NDK_HOME=/opt/android-sdk/ndk/27.3.13750724
+ENV PATH="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${ANDROID_SDK_ROOT}/platform-tools:${ANDROID_NDK_HOME}:${PATH}"
+RUN sudo mkdir -p "${ANDROID_SDK_ROOT}" && \
+    sudo chown -R "${USERNAME}:${USERNAME}" "${ANDROID_SDK_ROOT}" && \
+    curl -fsSL \
+        https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip \
+        -o /tmp/cmdline-tools.zip && \
+    mkdir -p "${ANDROID_SDK_ROOT}/cmdline-tools" && \
+    unzip -q /tmp/cmdline-tools.zip \
+        -d "${ANDROID_SDK_ROOT}/cmdline-tools" && \
+    mv "${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools" \
+        "${ANDROID_SDK_ROOT}/cmdline-tools/latest" && \
+    rm /tmp/cmdline-tools.zip && \
+    yes | sdkmanager --licenses >/dev/null && \
+    sdkmanager \
+        "platform-tools" \
+        "platforms;android-35" \
+        "build-tools;35.0.0" \
+        "ndk;27.3.13750724"
+
+# install pwndbg
+RUN curl --proto '=https' --tlsv1.2 -LsSf 'https://install.pwndbg.re' | sh -s -- -t pwndbg-gdb
+
+# install gef
+RUN wget -q https://raw.githubusercontent.com/bata24/gef/dev/install-uv.sh -O- | sudo sh
+
+# python tooling
+RUN pipx install vmlinux-to-elf && pipx ensurepath
+
 # for now we do them here because i cba to wait for the whole dockerfile rebuild
-RUN sudo apt-get update && sudo apt-get install -y --no-install-recommends xxd libkeyutils-dev libnl-cli-3-dev libnl-route-3-dev libip4tc-dev
-# libkeyutils-dev libnl-cli-3-dev libnl-route-3-dev libip4tc-dev - common kernel exp deps
+# RUN sudo apt-get update && sudo apt-get install -y --no-install-recommends
 
 # will mount host folder here
 WORKDIR /workspace
