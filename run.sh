@@ -92,7 +92,8 @@ if [[ ! -f "$ENV_FILE" ]]; then
 fi
 
 # enter docker
-# mounting docker.sock for docker-in-docker (https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/)
+# mounting docker.sock and giving perms for it for
+#   docker-in-docker (https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/)
 # --device=/dev/kvm  to allow running qemu-system setups inside
 # We mount named docker-managed volumes that will be shared between all docker runs:
 #   + /nix - so the runs don't have to rebuild nix stuff all the time.
@@ -113,6 +114,7 @@ exec docker run --rm -it \
     --env ADB_SERVER_SOCKET=tcp:host.docker.internal:5037 \
     --volume "$MOUNT_DIR:/workspace" \
     --volume /var/run/docker.sock:/var/run/docker.sock \
+    --group-add "$(stat -c '%g' /var/run/docker.sock)" \
     "${STATE_MOUNTS[@]}" \
     "${EXTRA_MOUNTS[@]}" \
     --workdir /workspace \
