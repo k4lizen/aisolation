@@ -8,6 +8,20 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # mounted folder
 MOUNT_DIR="$(pwd)"
 
+# if we run this as root, still use the "dev" account inside the
+# container, but editing files will be as if you are root on host for
+# the mounted directories
+HOST_UID="$(id -u)"
+HOST_GID="$(id -g)"
+BUILD_UID="$HOST_UID"
+BUILD_GID="$HOST_GID"
+DOCKER_USER_ARGS=()
+if [[ "$HOST_UID" == "0" ]]; then
+    BUILD_UID=1000
+    BUILD_GID=1000
+    DOCKER_USER_ARGS+=( --user 0:0 --env HOME=/home/dev )
+fi
+
 # show help page if needed
 usage() {
     echo "Usage: aihere [options] [command]"
@@ -77,8 +91,8 @@ done
 if [[ "$FORCE_BUILD" == "1" ]] || ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
     echo "[aisolation] Building $IMAGE..."
     docker build \
-        --build-arg USER_UID="$(id -u)" \
-        --build-arg USER_GID="$(id -g)" \
+        --build-arg USER_UID="$BUILD_UID" \
+        --build-arg USER_GID="$BUILD_GID" \
         -t "$IMAGE" "$SCRIPT_DIR"
 fi
 
@@ -107,6 +121,7 @@ fi
 #    --env ADB_SERVER_SOCKET=tcp:host.docker.internal:5037 \
 # Make it so that the docker can reach an adb server started on the host with `adb -a start-server`.
 exec docker run --rm -it \
+    "${DOCKER_USER_ARGS[@]}" \
     --hostname aisolation \
     --cap-add=SYS_PTRACE \
     --security-opt seccomp=unconfined \
