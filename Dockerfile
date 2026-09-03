@@ -146,6 +146,7 @@ RUN mv /usr/bin/claude /usr/bin/claude2
 # (for some reason it doesn't respect the xhigh in the config file)
 RUN printf '#!/usr/bin/env bash\nexec /usr/bin/claude2 --dangerously-skip-permissions --effort xhigh $@' > /usr/bin/claude
 RUN chmod 755 /usr/bin/claude
+ENV IS_SANDBOX=1
 
 # make codex bypass perms by default
 RUN mv /usr/bin/codex /usr/bin/codex2

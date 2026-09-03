@@ -8,9 +8,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # mounted folder
 MOUNT_DIR="$(pwd)"
 
-# if we run this as root, still use the "dev" account inside the
-# container, but editing files will be as if you are root on host for
-# the mounted directories
+# make the dev account have a sane id, but actually run
+# as root inside the container
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 BUILD_UID="$HOST_UID"
