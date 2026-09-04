@@ -113,6 +113,25 @@ if [[ -n "${COLORTERM:-}" ]]; then
     TERM_ARGS+=( --env "COLORTERM=$COLORTERM" )
 fi
 
+# pass the host timezone so timestamps inside match the ones outside
+TZ_ARGS=()
+if [[ -e /etc/localtime ]]; then
+    TZ_ARGS+=( --volume /etc/localtime:/etc/localtime:ro )
+fi
+HOST_TZ="${TZ:-}"
+if [[ -z "$HOST_TZ" ]]; then
+    zonepath="$(readlink -f /etc/localtime 2>/dev/null || true)"
+    case "$zonepath" in
+        */zoneinfo/*) HOST_TZ="${zonepath##*/zoneinfo/}" ;;
+    esac
+fi
+if [[ -z "$HOST_TZ" && -r /etc/timezone ]]; then
+    HOST_TZ="$(< /etc/timezone)"
+fi
+if [[ -n "$HOST_TZ" ]]; then
+    TZ_ARGS+=( --env "TZ=$HOST_TZ" )
+fi
+
 # enter docker
 # mounting docker.sock and giving perms for it for
 #   docker-in-docker (https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/)
@@ -136,6 +155,7 @@ exec docker run --rm -it \
     --add-host=host.docker.internal:host-gateway \
     --env ADB_SERVER_SOCKET=tcp:host.docker.internal:5037 \
     "${TERM_ARGS[@]}" \
+    "${TZ_ARGS[@]}" \
     --volume "$MOUNT_DIR:/workspace" \
     --volume /var/run/docker.sock:/var/run/docker.sock \
     --group-add "$(stat -c '%g' /var/run/docker.sock)" \
