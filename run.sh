@@ -42,6 +42,8 @@ STATE_MOUNTS=(
     --mount "type=volume,src=aisolation-claude,dst=/home/dev/.claude"
     --mount "type=bind,src=$SCRIPT_DIR/codex-config.toml,dst=/home/dev/.codex/config.toml,readonly"
     --mount "type=bind,src=$SCRIPT_DIR/claude-settings.json,dst=/home/dev/.claude/settings.json,readonly"
+    --mount "type=bind,src=$SCRIPT_DIR/agent-instructions.md,dst=/etc/claude-code/CLAUDE.md,readonly"
+    --mount "type=bind,src=$SCRIPT_DIR/agent-instructions.md,dst=/home/dev/.codex/AGENTS.md,readonly"
 )
 
 while [[ $# -gt 0 ]]; do
@@ -112,8 +114,8 @@ fi
 #   + /nix - so the runs don't have to rebuild nix stuff all the time.
 #     Since nix is content-addressed, they won't destructively interfere with eachother.
 #   + ~/.claude and ~/.codex - so sessions are persisted 
-# We then bind-mount ~/.codex/config.toml ~/.claude/settings.json on top, so they are always
-#   taken from this repo (and do not grow stale).
+# We then bind-mount ~/.codex/config.toml, ~/.claude/settings.json and agent-instructions.md on top
+#   so they are always taken from this repo (and do not grow stale).
 # See $STATE_MOUNTS.
 # These two:
 #    --add-host=host.docker.internal:host-gateway \

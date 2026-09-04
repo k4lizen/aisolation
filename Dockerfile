@@ -160,15 +160,12 @@ RUN rm yazi-bash-helper.sh
 
 USER ${USERNAME}
 
-# claude settings
-COPY ./claude-settings.json /home/${USERNAME}/.claude/settings.json
+# make sure the dirs exist for the bind-mount
+RUN mkdir -p /home/${USERNAME}/.claude /home/${USERNAME}/.codex
 # don't pester on startup
 RUN printf '{"hasCompletedOnboarding": true, "projects": {"/workspace": {"hasTrustDialogAccepted": true}}}\n' > /home/${USERNAME}/.claude.json
 # don't try to update
 ENV DISABLE_AUTOUPDATER=1
-
-# codex settings
-COPY ./codex-config.toml /home/${USERNAME}/.codex/config.toml
 
 # git settings
 COPY ./gitconfig /home/${USERNAME}/.gitconfig
