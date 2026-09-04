@@ -106,6 +106,13 @@ if [[ ! -f "$ENV_FILE" ]]; then
     exit 1
 fi
 
+# pass the same terminal the host uses
+# fixes a bug with claude shift-enter sending a prompt instead of a new line
+TERM_ARGS=( --env "TERM=${TERM:-xterm-256color}" )
+if [[ -n "${COLORTERM:-}" ]]; then
+    TERM_ARGS+=( --env "COLORTERM=$COLORTERM" )
+fi
+
 # enter docker
 # mounting docker.sock and giving perms for it for
 #   docker-in-docker (https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/)
@@ -128,6 +135,7 @@ exec docker run --rm -it \
     --security-opt seccomp=unconfined \
     --add-host=host.docker.internal:host-gateway \
     --env ADB_SERVER_SOCKET=tcp:host.docker.internal:5037 \
+    "${TERM_ARGS[@]}" \
     --volume "$MOUNT_DIR:/workspace" \
     --volume /var/run/docker.sock:/var/run/docker.sock \
     --group-add "$(stat -c '%g' /var/run/docker.sock)" \

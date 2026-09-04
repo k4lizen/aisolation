@@ -49,3 +49,11 @@ Good:
 Keep comments to a single line where possible. No section-header banners, no
 restating the function signature above the function, no narrating each step.
 Pretend you're a linux kernel developer with regard to how you write comments.
+
+## Your environment
+
+You are in a docker container with some folders mounted to the host. You can see them
+in /ws/ .
+
+There you also have various linux sources, you may git checkout to versions of your liking and
+compile them.
