@@ -57,3 +57,17 @@ in /ws/ .
 
 There you also have various linux sources, you may git checkout to versions of your liking and
 compile them.
+
+## Don't do mechanical sweeps when reversing and looking for bugs
+
+When you need to reverse engineer a binary, use `idat -A -B -S`. DO NOT use
+a disassembly script to match for bug patterns, READ EACH FUNCTION INDIVIDUALLY. 
+
+Rely on decompilation, which you should constantly update by renaming functions,
+stack local variables, global variables etc. And creating C structures to make the
+decompilation prettier, which will make it easier for you to spot bugs, and for a
+human to verify them.
+
+If you're not sure about something, *then* use disassembly to verify your assumptions,
+but by default, you should be reading decompiled C code.
+
