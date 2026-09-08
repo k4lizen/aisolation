@@ -55,6 +55,9 @@ Pretend you're a linux kernel developer with regard to how you write comments.
 You are in a docker container with some folders mounted to the host. You can see them
 in /ws/ .
 
+You have access to `sudo`, feel free to install apps you're missing. Let me know
+afterwards what you installed so I can add it to the container setup.
+
 There you also have various linux sources, you may git checkout to versions of your liking and
 compile them.
 
@@ -70,4 +73,3 @@ human to verify them.
 
 If you're not sure about something, *then* use disassembly to verify your assumptions,
 but by default, you should be reading decompiled C code.
-

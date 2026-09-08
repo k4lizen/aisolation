@@ -208,10 +208,10 @@ RUN curl --proto '=https' --tlsv1.2 -LsSf 'https://install.pwndbg.re' | sh -s --
 RUN wget -q https://raw.githubusercontent.com/bata24/gef/dev/install-uv.sh -O- | sudo sh
 
 # python tooling
-RUN pipx install vmlinux-to-elf && pipx ensurepath
+RUN uv tool install vmlinux-to-elf && uv tool install ruff
 
 # for now we do them here because i cba to wait for the whole dockerfile rebuild
-# RUN sudo apt-get update && sudo apt-get install -y --no-install-recommends
+RUN sudo apt-get update && sudo apt-get install -y --no-install-recommends shfmt gh
 
 # will mount host folder here
 WORKDIR /workspace
