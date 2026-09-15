@@ -211,7 +211,7 @@ RUN wget -q https://raw.githubusercontent.com/bata24/gef/dev/install-uv.sh -O- |
 RUN uv tool install vmlinux-to-elf && uv tool install ruff
 
 # for now we do them here because i cba to wait for the whole dockerfile rebuild
-RUN sudo apt-get update && sudo apt-get install -y --no-install-recommends shfmt gh
+RUN sudo apt-get update && sudo apt-get install -y --no-install-recommends shfmt gh python3-pycryptodome python3-requests lz4
 
 # will mount host folder here
 WORKDIR /workspace
